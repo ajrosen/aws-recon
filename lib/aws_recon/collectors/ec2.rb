@@ -357,6 +357,36 @@ class EC2 < Mapper
 
         raise e unless suppressed_errors.include?(e.code) && !@options.quit_on_exception
       end
+
+      #
+      # describe_transit_gateways
+      #
+      @client.describe_transit_gateways.each_with_index do |response, page|
+        log(response.context.operation_name, page)
+
+        response.transit_gateways.each do |gateway|
+          struct = OpenStruct.new(gateway.to_h)
+          struct.type = 'transit_gateway'
+          struct.arn = gateway.transit_gateway_arn
+
+          resources.push(struct.to_h)
+        end
+      end
+
+      #
+      # describe_transit_gateway_route_tables
+      #
+      @client.describe_transit_gateway_route_tables.each_with_index do |response, page|
+        log(response.context.operation_name, page)
+
+        response.transit_gateway_route_tables.each do |table|
+          struct = OpenStruct.new(table.to_h)
+          struct.type = 'transit_gateway_route_table'
+          struct.arn = "arn:aws:ec2:#{@region}:#{@account}:transit_gateway_route_table/#{table.transit_gateway_route_table_id}" # no true ARN
+
+          resources.push(struct.to_h)
+        end
+      end
     end
 
     resources
